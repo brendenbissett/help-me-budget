@@ -61,5 +61,7 @@ The system is designed for long-term maintainability, easy feature expansion, an
 ## Set up environment
 
 ### Required Environment variables
-GOOGLE_KEY
-GOOGLE_SECRET
+GOOGLE_KEY  
+GOOGLE_SECRET  
+FACEBOOK_KEY  
+FACEBOOK_SECRET
