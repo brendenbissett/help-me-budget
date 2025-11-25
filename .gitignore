@@ -1,0 +1,26 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+*.env
+
+# Folders
+[Dd]ata/
+[Ll]ogs/
+[Tt]mp/
+vendor/
+
+# Go workspace file
+go.work.lock
+
+# IDE-specific files and folders (optional)
+.idea/         # JetBrains IDEs (GoLand, etc.)
+.vscode/       # VS Code
+.history/      # VS Code history
+nbproject/     # NetBeans
+*.swp          # Vim swap files
+
