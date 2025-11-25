@@ -56,3 +56,10 @@ Together, this stack offers:
 - A clear separation of concerns
 
 The system is designed for long-term maintainability, easy feature expansion, and a smooth user experience.
+
+
+## Set up environment
+
+### Required Environment variables
+GOOGLE_KEY
+GOOGLE_SECRET
