@@ -62,6 +62,8 @@ The system is designed for long-term maintainability, easy feature expansion, an
 
 ### Required Environment variables
 GOOGLE_KEY  
-GOOGLE_SECRET  
+GOOGLE_SECRET
+GOOGLE_CALLBACK_URL
 FACEBOOK_KEY  
 FACEBOOK_SECRET
+FACEBOOK_CALLBACK_URL
