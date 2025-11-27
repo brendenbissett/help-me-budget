@@ -173,12 +173,14 @@ The application uses separate PostgreSQL schemas for logical separation:
   - Links to budget entries when matched
   - Confidence levels: manual, auto_high, auto_low, unmatched
 
-See `database/README.md` for detailed schema documentation.
+See `docs/database-setup.md` for detailed schema documentation.
 
 ## 📚 Documentation
 
 - **CLAUDE.md** - Comprehensive codebase documentation for AI assistants
-- **database/README.md** - Database setup and migration guide
+- **docs/database-setup.md** - Database setup and migration guide
+- **docs/admin-setup.md** - Admin panel setup guide
+- **docs/admin-panel-guide.md** - Admin panel user guide
 - **api/.env.example** - Environment variable template
 
 ## 🛠️ Development

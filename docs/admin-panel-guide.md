@@ -262,8 +262,8 @@ LIMIT 20;
 
 ## 📚 Additional Resources
 
-- **Database Schema:** See `database/ADMIN_SETUP.md`
-- **API Documentation:** See `database/ADMIN_SETUP.md`
+- **Database Schema:** See `docs/admin-setup.md`
+- **API Documentation:** See `docs/admin-setup.md`
 - **Migration Files:** `database/migrations/000004_*`
 - **Backend Code:** `api/internal/admin/` and `api/internal/auth/rbac_repository.go`
 - **Frontend Code:** `frontend/help-me-budget/src/routes/admin/`
