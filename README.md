@@ -98,17 +98,38 @@ cp .env.example .env
 # Edit .env and add your OAuth keys
 ```
 
-**Required variables:**
+**OAuth Configuration (required):**
 - `GOOGLE_KEY` - OAuth client ID from Google Console
-- `GOOGLE_SECRET` - OAuth client secret
-- `FACEBOOK_KEY` - Facebook App ID
-- `FACEBOOK_SECRET` - Facebook App secret
+- `GOOGLE_SECRET` - OAuth client secret from Google Console
+- `GOOGLE_CALLBACK_URL` - OAuth callback URL (default: `http://localhost:5173/api/auth/callback/google`)
+- `FACEBOOK_KEY` - Facebook App ID from Facebook Developers
+- `FACEBOOK_SECRET` - Facebook App secret from Facebook Developers
+- `FACEBOOK_CALLBACK_URL` - OAuth callback URL (default: `http://localhost:5173/api/auth/callback/facebook`)
 
-**Database & Redis** (defaults work with Docker setup):
-- `DATABASE_URL` or individual `DB_*` variables
-- `REDIS_URL` or `REDIS_ADDR`
+**Database Configuration (defaults work with Docker setup):**
 
-See `api/.env.example` for all options.
+Option 1 - Use full connection string:
+- `DATABASE_URL` - Full PostgreSQL connection string (e.g., `postgres://budgetuser:budgetpass@localhost:5432/help_me_budget?sslmode=disable`)
+
+Option 2 - Use individual variables:
+- `DB_HOST` - PostgreSQL host (default: `localhost`)
+- `DB_PORT` - PostgreSQL port (default: `5432`)
+- `DB_USER` - PostgreSQL username (default: `budgetuser`)
+- `DB_PASSWORD` - PostgreSQL password (default: `budgetpass`)
+- `DB_NAME` - Database name (default: `help_me_budget`)
+- `DB_SSLMODE` - SSL mode (default: `disable`)
+
+**Redis Configuration (defaults work with Docker setup):**
+
+Option 1 - Use full connection string:
+- `REDIS_URL` - Full Redis connection string (e.g., `redis://localhost:6379`)
+
+Option 2 - Use individual variables:
+- `REDIS_ADDR` - Redis address (default: `localhost:6379`)
+- `REDIS_PASSWORD` - Redis password (leave empty for local development)
+
+**Application Environment:**
+- `APP_ENV` - Environment mode: `development` or `production` (default: `development`)
 
 ### 3. Start the Backend
 
