@@ -19,7 +19,7 @@
 
 			if (usersRes.ok) {
 				const usersData = await usersRes.json();
-				stats.totalUsers = usersData.users?.length || 0;
+				stats.totalUsers = usersData.total || 0;
 			}
 
 			if (sessionsRes.ok) {

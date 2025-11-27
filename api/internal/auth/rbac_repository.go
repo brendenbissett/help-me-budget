@@ -283,3 +283,15 @@ func GetAllUsers(ctx context.Context, limit, offset int) ([]User, error) {
 
 	return users, nil
 }
+
+// CountAllUsers returns the total number of users
+func CountAllUsers(ctx context.Context) (int, error) {
+	var count int
+	err := database.DB.QueryRow(ctx, `
+		SELECT COUNT(*) FROM auth.users
+	`).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count users: %w", err)
+	}
+	return count, nil
+}

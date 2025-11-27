@@ -18,6 +18,14 @@ func GetUsers(c *fiber.Ctx) error {
 		limit = 100 // Cap at 100
 	}
 
+	// Get total count
+	totalCount, err := auth.CountAllUsers(c.Context())
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to count users",
+		})
+	}
+
 	users, err := auth.GetAllUsers(c.Context(), limit, offset)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -45,6 +53,7 @@ func GetUsers(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{
 		"users": usersWithRoles,
+		"total": totalCount,
 		"limit": limit,
 		"offset": offset,
 	})
