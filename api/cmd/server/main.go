@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/brendenbissett/help-me-budget/api/internal/auth"
+	"github.com/brendenbissett/help-me-budget/api/internal/database"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/joho/godotenv"
@@ -22,6 +23,18 @@ func main() {
 			log.Fatal("Error loading .env file")
 		}
 	}
+
+	// Initialize database connection
+	if err := database.InitDatabase(); err != nil {
+		log.Fatal("Error initializing database:", err)
+	}
+	defer database.Close()
+
+	// Initialize Redis connection
+	if err := database.InitRedis(); err != nil {
+		log.Fatal("Error initializing Redis:", err)
+	}
+	defer database.CloseRedis()
 
 	// Initialize OAuth providers
 	if err := auth.InitializeOAuthProviders(); err != nil {

@@ -22,17 +22,22 @@ The backend exposes a clean set of RESTful endpoints that handle:
 
 Go + Fiber keeps the backend easy to reason about while remaining scalable for future features.
 
-## 🗃️ Database — PostgreSQL
+## 🗃️ Database — PostgreSQL + Redis
 
-The application uses PostgreSQL as its main data store because of its reliability, ACID compliance, and strong support for structured financial data.
+The application uses PostgreSQL as its main data store with Redis for session management.
 
-Postgres gives us:
-- Strong consistency guarantees
-- JSONB support for flexible data modeling
+**PostgreSQL** provides:
+- Strong consistency guarantees for financial data
+- JSONB support for flexible data modeling (transaction matching rules)
 - Powerful indexing and query capabilities
-- Easy integration with Go database libraries
+- Separate schemas for auth and budget data
 
-It’s an ideal fit for budgeting data, where accuracy and integrity matter.
+**Redis** handles:
+- Session storage for OAuth flows
+- Fast, ephemeral data caching
+- High-performance key-value operations
+
+This combination ensures data integrity for critical financial records while maintaining fast session management.
 
 ## 🎨 Frontend — SvelteKit
 
@@ -58,12 +63,103 @@ Together, this stack offers:
 The system is designed for long-term maintainability, easy feature expansion, and a smooth user experience.
 
 
-## Set up environment
+## 🚀 Quick Start
 
-### Required Environment variables
-GOOGLE_KEY  
-GOOGLE_SECRET
-GOOGLE_CALLBACK_URL
-FACEBOOK_KEY  
-FACEBOOK_SECRET
-FACEBOOK_CALLBACK_URL
+### Prerequisites
+
+- **Docker & Docker Compose** (for PostgreSQL and Redis)
+- **Go 1.25.4+** (for backend API)
+- **Node.js & npm** (for frontend)
+- **golang-migrate** CLI (for database migrations)
+  ```bash
+  brew install golang-migrate
+  # or
+  go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+  ```
+
+### 1. Start Database Services
+
+```bash
+cd database
+chmod 755 init && chmod 644 init/01_create_schemas.sql  # Ensure correct permissions
+make up          # Starts PostgreSQL and Redis
+make migrate-up  # Runs database migrations
+```
+
+PostgreSQL will be available at `localhost:5432`, Redis at `localhost:6379`.
+
+### 2. Configure Environment Variables
+
+Copy the example file and add your OAuth credentials:
+
+```bash
+cd api
+cp .env.example .env
+# Edit .env and add your OAuth keys
+```
+
+**Required variables:**
+- `GOOGLE_KEY` - OAuth client ID from Google Console
+- `GOOGLE_SECRET` - OAuth client secret
+- `FACEBOOK_KEY` - Facebook App ID
+- `FACEBOOK_SECRET` - Facebook App secret
+
+**Database & Redis** (defaults work with Docker setup):
+- `DATABASE_URL` or individual `DB_*` variables
+- `REDIS_URL` or `REDIS_ADDR`
+
+See `api/.env.example` for all options.
+
+### 3. Start the Backend
+
+```bash
+cd api
+go run ./cmd/server
+```
+
+API server runs at `http://localhost:3000`
+
+### 4. Start the Frontend
+
+```bash
+cd frontend/help-me-budget
+npm install
+npm run dev
+```
+
+Frontend runs at `http://localhost:5173`
+
+### 5. Test OAuth Login
+
+Visit `http://localhost:5173` and click "Login with Google" or "Login with Facebook" to test the authentication flow.
+
+## 📊 Database Schema
+
+The application uses separate PostgreSQL schemas for logical separation:
+
+### Auth Schema (`auth`)
+- **users** - User accounts (email, name, avatar)
+- **user_oauth_providers** - OAuth provider links (supports multiple providers per user)
+
+### Budget Schema (`budget`)
+- **budgets** - Budget plans/scenarios (users can have multiple)
+- **categories** - Income/expense categories with hierarchy support
+- **budget_entries** - Planned recurring transactions
+  - Frequencies: once-off, daily, weekly, fortnightly, monthly, annually
+  - JSONB `matching_rules` for auto-matching imported transactions
+- **accounts** - Bank accounts, credit cards, cash
+- **transactions** - Actual transactions
+  - Links to budget entries when matched
+  - Confidence levels: manual, auto_high, auto_low, unmatched
+
+See `database/README.md` for detailed schema documentation.
+
+## 📚 Documentation
+
+- **CLAUDE.md** - Comprehensive codebase documentation for AI assistants
+- **database/README.md** - Database setup and migration guide
+- **api/.env.example** - Environment variable template
+
+## 🛠️ Development
+
+For detailed development commands and workflow, see `CLAUDE.md`.

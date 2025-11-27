@@ -9,6 +9,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
+	"github.com/gofiber/storage/redis/v3"
 	"github.com/google/uuid"
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/providers/facebook"
@@ -192,13 +193,28 @@ func handleAuthCallback(store *session.Store) fiber.Handler {
 			log.Println("session save error:", err)
 		}
 
+		// Persist user to database (create or update)
+		// Note: We don't store OAuth tokens - only using them for authentication
+		dbUser, err := UpsertUserWithOAuth(
+			c.Context(),
+			user.Email,
+			user.Name,
+			user.AvatarURL,
+			providerName,
+			user.UserID,
+		)
+		if err != nil {
+			log.Println("failed to persist user to database:", err)
+			return c.Status(fiber.StatusInternalServerError).SendString("Failed to save user: " + err.Error())
+		}
+
 		// Encode user data as URL parameters for safe transmission
 		userDataJSON, _ := json.Marshal(map[string]interface{}{
 			"provider":   providerName,
-			"name":       user.Name,
-			"email":      user.Email,
-			"user_id":    user.UserID,
-			"avatar_url": user.AvatarURL,
+			"name":       dbUser.Name,
+			"email":      dbUser.Email,
+			"user_id":    dbUser.ID.String(),
+			"avatar_url": dbUser.AvatarURL,
 		})
 
 		// Redirect to SvelteKit callback with user data as query parameter
@@ -207,9 +223,22 @@ func handleAuthCallback(store *session.Store) fiber.Handler {
 	}
 }
 
-// NewSessionStore creates and returns a new fiber session store
+// NewSessionStore creates and returns a new fiber session store with Redis storage
 func NewSessionStore() *session.Store {
+	// Use the existing Redis client from database package
+	// This avoids creating duplicate Redis connections
+	storage := redis.New(redis.Config{
+		Host:      os.Getenv("REDIS_ADDR"),
+		Port:      0, // Port is included in Host string
+		Password:  os.Getenv("REDIS_PASSWORD"),
+		Database:  0,
+		Reset:     false,
+		TLSConfig: nil,
+	})
+
+	// Create session store with Redis backend
 	return session.New(session.Config{
+		Storage:        storage,
 		KeyLookup:      "cookie:session_id",
 		CookieHTTPOnly: true,
 		CookieSameSite: "Lax",
