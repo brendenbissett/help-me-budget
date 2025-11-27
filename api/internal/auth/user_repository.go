@@ -12,14 +12,17 @@ import (
 
 // User represents a user in the database
 type User struct {
-	ID            uuid.UUID
-	Email         string
-	EmailVerified bool
-	Name          string
-	AvatarURL     string
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
-	LastLoginAt   *time.Time
+	ID             uuid.UUID
+	Email          string
+	EmailVerified  bool
+	Name           string
+	AvatarURL      string
+	IsActive       bool
+	DeactivatedAt  *time.Time
+	DeactivatedBy  *uuid.UUID
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	LastLoginAt    *time.Time
 }
 
 // UserOAuthProvider represents an OAuth provider linked to a user
@@ -45,12 +48,13 @@ func UpsertUserWithOAuth(ctx context.Context, email, name, avatarURL, provider, 
 	// First, try to find existing user by email
 	var user User
 	err = tx.QueryRow(ctx, `
-		SELECT id, email, email_verified, name, avatar_url, created_at, updated_at, last_login_at
+		SELECT id, email, email_verified, name, avatar_url, is_active, deactivated_at, deactivated_by, created_at, updated_at, last_login_at
 		FROM auth.users
 		WHERE email = $1
 	`, email).Scan(
 		&user.ID, &user.Email, &user.EmailVerified, &user.Name,
-		&user.AvatarURL, &user.CreatedAt, &user.UpdatedAt, &user.LastLoginAt,
+		&user.AvatarURL, &user.IsActive, &user.DeactivatedAt, &user.DeactivatedBy,
+		&user.CreatedAt, &user.UpdatedAt, &user.LastLoginAt,
 	)
 
 	if err == pgx.ErrNoRows {
@@ -58,10 +62,11 @@ func UpsertUserWithOAuth(ctx context.Context, email, name, avatarURL, provider, 
 		err = tx.QueryRow(ctx, `
 			INSERT INTO auth.users (email, email_verified, name, avatar_url, last_login_at)
 			VALUES ($1, $2, $3, $4, $5)
-			RETURNING id, email, email_verified, name, avatar_url, created_at, updated_at, last_login_at
+			RETURNING id, email, email_verified, name, avatar_url, is_active, deactivated_at, deactivated_by, created_at, updated_at, last_login_at
 		`, email, true, name, avatarURL, time.Now()).Scan(
 			&user.ID, &user.Email, &user.EmailVerified, &user.Name,
-			&user.AvatarURL, &user.CreatedAt, &user.UpdatedAt, &user.LastLoginAt,
+			&user.AvatarURL, &user.IsActive, &user.DeactivatedAt, &user.DeactivatedBy,
+			&user.CreatedAt, &user.UpdatedAt, &user.LastLoginAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create user: %w", err)
@@ -104,12 +109,13 @@ func UpsertUserWithOAuth(ctx context.Context, email, name, avatarURL, provider, 
 func GetUserByID(ctx context.Context, userID uuid.UUID) (*User, error) {
 	var user User
 	err := database.DB.QueryRow(ctx, `
-		SELECT id, email, email_verified, name, avatar_url, created_at, updated_at, last_login_at
+		SELECT id, email, email_verified, name, avatar_url, is_active, deactivated_at, deactivated_by, created_at, updated_at, last_login_at
 		FROM auth.users
 		WHERE id = $1
 	`, userID).Scan(
 		&user.ID, &user.Email, &user.EmailVerified, &user.Name,
-		&user.AvatarURL, &user.CreatedAt, &user.UpdatedAt, &user.LastLoginAt,
+		&user.AvatarURL, &user.IsActive, &user.DeactivatedAt, &user.DeactivatedBy,
+		&user.CreatedAt, &user.UpdatedAt, &user.LastLoginAt,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
@@ -121,12 +127,13 @@ func GetUserByID(ctx context.Context, userID uuid.UUID) (*User, error) {
 func GetUserByEmail(ctx context.Context, email string) (*User, error) {
 	var user User
 	err := database.DB.QueryRow(ctx, `
-		SELECT id, email, email_verified, name, avatar_url, created_at, updated_at, last_login_at
+		SELECT id, email, email_verified, name, avatar_url, is_active, deactivated_at, deactivated_by, created_at, updated_at, last_login_at
 		FROM auth.users
 		WHERE email = $1
 	`, email).Scan(
 		&user.ID, &user.Email, &user.EmailVerified, &user.Name,
-		&user.AvatarURL, &user.CreatedAt, &user.UpdatedAt, &user.LastLoginAt,
+		&user.AvatarURL, &user.IsActive, &user.DeactivatedAt, &user.DeactivatedBy,
+		&user.CreatedAt, &user.UpdatedAt, &user.LastLoginAt,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)

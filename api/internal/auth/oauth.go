@@ -2,11 +2,13 @@ package auth
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/url"
 	"os"
 	"time"
 
+	"github.com/brendenbissett/help-me-budget/api/internal/database"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/gofiber/storage/redis/v3"
@@ -70,6 +72,12 @@ func SetupAuthRoutes(app *fiber.App, store *session.Store) {
 
 	// ROUTE: callback -> /auth/:provider/callback
 	app.Get("/auth/:provider/callback", handleAuthCallback(store))
+
+	// ROUTE: logout -> /auth/logout/:userId
+	app.Delete("/auth/logout/:userId", handleLogout)
+
+	// ROUTE: check session -> /auth/session/:userId
+	app.Get("/auth/session/:userId", handleCheckSession)
 }
 
 // handleAuthStart initiates the OAuth flow
@@ -208,6 +216,21 @@ func handleAuthCallback(store *session.Store) fiber.Handler {
 			return c.Status(fiber.StatusInternalServerError).SendString("Failed to save user: " + err.Error())
 		}
 
+		// Create a session record in Redis for admin tracking
+		redisSessionKey := fmt.Sprintf("session:%s", dbUser.ID.String())
+		sessionData := map[string]interface{}{
+			"user_id":   dbUser.ID.String(),
+			"email":     dbUser.Email,
+			"name":      dbUser.Name,
+			"provider":  providerName,
+			"login_at":  time.Now().Format(time.RFC3339),
+		}
+		sessionJSON, _ := json.Marshal(sessionData)
+		if err := database.RedisClient.Set(c.Context(), redisSessionKey, sessionJSON, 24*time.Hour).Err(); err != nil {
+			log.Println("failed to create session in Redis:", err)
+			// Don't fail the auth flow if session creation fails
+		}
+
 		// Encode user data as URL parameters for safe transmission
 		userDataJSON, _ := json.Marshal(map[string]interface{}{
 			"provider":   providerName,
@@ -244,5 +267,58 @@ func NewSessionStore() *session.Store {
 		CookieSameSite: "Lax",
 		CookiePath:     "/",
 		Expiration:     24 * time.Hour,
+	})
+}
+
+// handleLogout deletes the user's Redis session
+func handleLogout(c *fiber.Ctx) error {
+	userID := c.Params("userId")
+	if userID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "User ID is required",
+		})
+	}
+
+	// Delete the session from Redis
+	sessionKey := fmt.Sprintf("session:%s", userID)
+	if err := database.RedisClient.Del(c.Context(), sessionKey).Err(); err != nil {
+		log.Println("failed to delete session from Redis:", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to delete session",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"success": true,
+	})
+}
+
+// handleCheckSession validates if a user's Redis session exists
+func handleCheckSession(c *fiber.Ctx) error {
+	userID := c.Params("userId")
+	if userID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "User ID is required",
+		})
+	}
+
+	// Check if the session exists in Redis
+	sessionKey := fmt.Sprintf("session:%s", userID)
+	exists, err := database.RedisClient.Exists(c.Context(), sessionKey).Result()
+	if err != nil {
+		log.Println("failed to check session in Redis:", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to check session",
+		})
+	}
+
+	if exists == 0 {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Session not found",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"valid": true,
 	})
 }
