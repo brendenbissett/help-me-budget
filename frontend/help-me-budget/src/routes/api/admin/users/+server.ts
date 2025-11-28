@@ -1,8 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getLocalUserId } from '$lib/server/auth-helpers';
-
-const API_URL = 'http://localhost:3000';
+import { authenticatedFetchWithUser } from '$lib/server/api-client';
 
 export const GET: RequestHandler = async ({ locals: { supabase }, url }) => {
 	try {
@@ -12,12 +11,8 @@ export const GET: RequestHandler = async ({ locals: { supabase }, url }) => {
 		const limit = url.searchParams.get('limit') || '50';
 		const offset = url.searchParams.get('offset') || '0';
 
-		const response = await globalThis.fetch(`${API_URL}/admin/users?limit=${limit}&offset=${offset}`, {
-			method: 'GET',
-			headers: {
-				'X-User-ID': localUserId,
-				'Content-Type': 'application/json'
-			}
+		const response = await authenticatedFetchWithUser(`/admin/users?limit=${limit}&offset=${offset}`, localUserId, {
+			method: 'GET'
 		});
 
 		const data = await response.json();

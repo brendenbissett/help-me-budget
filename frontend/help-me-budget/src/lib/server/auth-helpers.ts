@@ -1,7 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { SupabaseClient } from '@supabase/supabase-js';
-
-const API_URL = 'http://localhost:3000';
+import { authenticatedFetch } from './api-client';
 
 /**
  * Gets the local PostgreSQL user ID for a Supabase-authenticated user
@@ -18,13 +17,10 @@ export async function getLocalUserId(supabase: SupabaseClient): Promise<string> 
 	}
 
 	// Lookup user in local PostgreSQL by email
-	const rolesResponse = await globalThis.fetch(
-		`${API_URL}/auth/roles/by-email?email=${encodeURIComponent(user.email)}`,
+	const rolesResponse = await authenticatedFetch(
+		`/auth/roles/by-email?email=${encodeURIComponent(user.email)}`,
 		{
-			method: 'GET',
-			headers: {
-				'Content-Type': 'application/json'
-			}
+			method: 'GET'
 		}
 	);
 

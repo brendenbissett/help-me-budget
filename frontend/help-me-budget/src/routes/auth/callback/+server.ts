@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { authenticatedFetch } from '$lib/server/api-client';
 
 export const GET: RequestHandler = async ({ url, locals: { supabase } }) => {
 	const code = url.searchParams.get('code');
@@ -38,12 +39,8 @@ export const GET: RequestHandler = async ({ url, locals: { supabase } }) => {
 				const providerUserId = data.user.app_metadata?.provider_id || data.user.id;
 
 				// Call Go API to sync user to local PostgreSQL
-				// Use global fetch to avoid passing along all request headers
-				const syncResponse = await globalThis.fetch('http://localhost:3000/auth/sync', {
+				const syncResponse = await authenticatedFetch('/auth/sync', {
 					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json'
-					},
 					body: JSON.stringify({
 						email: data.user.email,
 						name: data.user.user_metadata?.full_name || data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',

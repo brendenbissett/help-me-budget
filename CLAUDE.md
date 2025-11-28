@@ -12,14 +12,21 @@ Help-Me-Budget is a budgeting application using a modern 3-tier architecture:
 
 The project is in early development with OAuth authentication (Google & Facebook) and database persistence implemented.
 
+**Security**: The Go API uses shared secret authentication to ensure only the SvelteKit backend can make requests. All API calls require a valid `X-API-Key` header (except the health check endpoint).
+
 ## Architecture & Directory Structure
 
 ### `/api` - Backend (Go)
 - **`cmd/server/main.go`**: Entry point for the API server
   - Fiber web server listening on port 3000
   - CORS middleware configured for localhost:5173
+  - API key authentication middleware (validates X-API-Key header)
   - Initializes database, Redis, and OAuth providers
   - Sets up authentication routes
+- **`internal/middleware/api_auth.go`**: API authentication middleware
+  - `ValidateAPIKey()` - Ensures requests come from SvelteKit backend
+  - Whitelists health check endpoint (GET /) for monitoring
+  - Returns 401 Unauthorized for missing/invalid API keys
 - **`internal/auth/oauth.go`**: OAuth authentication module
   - `InitializeOAuthProviders()` - Loads environment variables and configures Google/Facebook OAuth
   - `SetupAuthRoutes()` - Registers OAuth flow routes
@@ -40,6 +47,12 @@ The project is in early development with OAuth authentication (Google & Facebook
 - **`.env`**: Environment variables (OAuth keys, database, and Redis configuration)
 
 ### `/frontend` - Frontend (SvelteKit)
+- **`src/lib/server/api-client.ts`**: Authenticated fetch helpers
+  - `authenticatedFetch()` - Wrapper that automatically includes API key header
+  - `authenticatedFetchWithUser()` - Includes both API key and user ID headers
+  - Centralizes API URL configuration
+- **`src/lib/server/auth-helpers.ts`**: Authentication helper functions
+  - `getLocalUserId()` - Bridges Supabase auth with local PostgreSQL user ID
 - **`src/routes/+page.svelte`**: Main landing page with OAuth login
   - Displays login buttons for Google and Facebook
   - Shows authenticated user info (email and provider) when logged in
@@ -123,7 +136,12 @@ Set these in `api/.env` (see `api/.env.example` for template):
 **Application:**
 - `APP_ENV` - Environment (development/production)
 
-**Note**: The `.env` file contains sensitive credentials. It's already in `.gitignore`.
+**API Authentication:**
+- `API_SECRET_KEY` - Shared secret between SvelteKit and Go API (required for both frontend and backend)
+  - Generate with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+  - Must be identical in both `api/.env` and `frontend/help-me-budget/.env`
+
+**Note**: The `.env` files contain sensitive credentials. They're already in `.gitignore`.
 
 ### Local Development Prerequisites
 - Go 1.25.4 or later
@@ -259,6 +277,10 @@ The OAuth authentication uses a 3-layer architecture for security:
 
 ### Security Features
 
+- **API Key Authentication**: Shared secret (`X-API-Key` header) ensures only SvelteKit backend can access Go API
+  - All endpoints require valid API key (except GET / health check)
+  - Returns 401 Unauthorized for missing/invalid keys
+  - Prevents direct API access from unauthorized clients
 - Frontend never communicates directly with Go API (proxied through SvelteKit)
 - User data stored in secure HTTP-only cookies (cannot be accessed by JavaScript)
 - Session data stored in Redis (not in-memory)

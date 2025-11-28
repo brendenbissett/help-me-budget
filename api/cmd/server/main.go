@@ -8,6 +8,7 @@ import (
 	"github.com/brendenbissett/help-me-budget/api/internal/admin"
 	"github.com/brendenbissett/help-me-budget/api/internal/auth"
 	"github.com/brendenbissett/help-me-budget/api/internal/database"
+	"github.com/brendenbissett/help-me-budget/api/internal/middleware"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/joho/godotenv"
@@ -42,15 +43,27 @@ func main() {
 		log.Fatal("Error initializing OAuth providers:", err)
 	}
 
-	app := fiber.New()
+	// Validate API secret key is set
+	apiSecret := os.Getenv("API_SECRET_KEY")
+	if apiSecret == "" {
+		log.Fatal("API_SECRET_KEY environment variable is required")
+	}
+
+	app := fiber.New(fiber.Config{
+		// Increase header size limit to handle large browser cookies/headers
+		ReadBufferSize: 16384, // 16KB (default is 4KB)
+	})
 
 	// Set up middleware
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     "http://localhost:5173, http://127.0.0.1:5173",
-		AllowHeaders:     "Origin, Content-Type, Accept, X-User-ID",
+		AllowHeaders:     "Origin, Content-Type, Accept, X-User-ID, X-API-Key",
 		AllowCredentials: true,
 		AllowMethods:     "GET, POST, DELETE, PUT, PATCH, OPTIONS",
 	}))
+
+	// API key authentication (validates requests come from SvelteKit)
+	app.Use(middleware.ValidateAPIKey())
 
 	// Add user context middleware (extracts user ID from X-User-ID header)
 	app.Use(admin.SetUserContext())

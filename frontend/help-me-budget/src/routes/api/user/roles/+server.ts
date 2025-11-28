@@ -1,7 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-
-const GO_API_URL = 'http://localhost:3000';
+import { authenticatedFetch } from '$lib/server/api-client';
 
 export const GET: RequestHandler = async ({ locals: { supabase } }) => {
 	// Get authenticated user
@@ -16,11 +15,8 @@ export const GET: RequestHandler = async ({ locals: { supabase } }) => {
 	try {
 		// Call the Go API to get user roles by email
 		// We use email because Supabase user ID != local PostgreSQL user ID
-		const response = await globalThis.fetch(`${GO_API_URL}/auth/roles/by-email?email=${encodeURIComponent(user.email || '')}`, {
-			method: 'GET',
-			headers: {
-				'Content-Type': 'application/json'
-			}
+		const response = await authenticatedFetch(`/auth/roles/by-email?email=${encodeURIComponent(user.email || '')}`, {
+			method: 'GET'
 		});
 
 		if (!response.ok) {

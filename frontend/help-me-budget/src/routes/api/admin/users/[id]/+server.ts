@@ -1,20 +1,15 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getLocalUserId } from '$lib/server/auth-helpers';
-
-const API_URL = 'http://localhost:3000';
+import { authenticatedFetchWithUser } from '$lib/server/api-client';
 
 export const DELETE: RequestHandler = async ({ locals: { supabase }, params, request }) => {
 	try {
 		const localUserId = await getLocalUserId(supabase);
 		const body = await request.json();
 
-		const response = await globalThis.fetch(`${API_URL}/admin/users/${params.id}`, {
+		const response = await authenticatedFetchWithUser(`/admin/users/${params.id}`, localUserId, {
 			method: 'DELETE',
-			headers: {
-				'X-User-ID': localUserId,
-				'Content-Type': 'application/json'
-			},
 			body: JSON.stringify(body)
 		});
 
