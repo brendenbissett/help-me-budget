@@ -65,19 +65,31 @@ func InitializeOAuthProviders() error {
 	return nil
 }
 
-// SetupAuthRoutes configures all OAuth authentication routes
+// SetupAuthRoutes configures all authentication routes
+// Note: We're now using Supabase for OAuth, so the old Goth-based OAuth routes are disabled
 func SetupAuthRoutes(app *fiber.App, store *session.Store) {
-	// ROUTE: start OAuth flow -> /auth/:provider
-	app.Get("/auth/:provider", handleAuthStart(store))
+	// IMPORTANT: Register specific routes BEFORE wildcard routes
 
-	// ROUTE: callback -> /auth/:provider/callback
-	app.Get("/auth/:provider/callback", handleAuthCallback(store))
+	// ROUTE: get user roles -> /auth/roles (must be before :provider wildcard)
+	app.Get("/auth/roles", HandleGetUserRoles)
+
+	// ROUTE: get user roles by email -> /auth/roles/by-email (must be before :provider wildcard)
+	app.Get("/auth/roles/by-email", HandleGetUserRolesByEmail)
 
 	// ROUTE: logout -> /auth/logout/:userId
 	app.Delete("/auth/logout/:userId", handleLogout)
 
 	// ROUTE: check session -> /auth/session/:userId
 	app.Get("/auth/session/:userId", handleCheckSession)
+
+	// ROUTE: sync Supabase user to local PostgreSQL -> /auth/sync
+	app.Post("/auth/sync", HandleSupabaseUserSync)
+
+	// OLD OAUTH ROUTES (DISABLED - Using Supabase OAuth instead)
+	// These routes are kept for reference but not registered
+	// If you need to revert to the old OAuth flow, uncomment these:
+	// app.Get("/auth/:provider", handleAuthStart(store))
+	// app.Get("/auth/:provider/callback", handleAuthCallback(store))
 }
 
 // handleAuthStart initiates the OAuth flow

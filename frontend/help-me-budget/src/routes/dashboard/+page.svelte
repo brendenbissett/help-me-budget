@@ -1,86 +1,63 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { signOut } from '$lib/supabase.client';
 	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
 
-	interface User {
-		email: string;
-		name: string;
-		provider: string;
-		user_id: string;
-		avatar_url: string;
-	}
-
-	let user: User | null = null;
-	let loading = true;
-	let showDropdown = false;
-	let isAdmin = false;
-
-	async function checkAuth() {
-		try {
-			const response = await fetch('/api/auth/me');
-			if (response.ok) {
-				const data = await response.json();
-				if (!data.user) {
-					// Session was killed - redirect to login
-					goto('/');
-					return false;
-				}
-				user = data.user;
-				return true;
-			} else {
-				// Not authenticated, redirect to home
-				goto('/');
-				return false;
-			}
-		} catch (err) {
-			console.error('Error checking auth status:', err);
-			goto('/');
-			return false;
-		}
-	}
+	let { data } = $props();
+	let showDropdown = $state(false);
+	let isAdmin = $state(false);
 
 	onMount(async () => {
-		// Check if user is authenticated
-		const isAuthenticated = await checkAuth();
-		if (isAuthenticated) {
-			// Check if user has admin role
-			const adminCheck = await fetch('/api/admin/users?limit=1');
-			isAdmin = adminCheck.ok;
-
-			// Periodically check session validity (every 30 seconds)
-			const interval = setInterval(async () => {
-				const stillAuthenticated = await checkAuth();
-				if (!stillAuthenticated) {
-					clearInterval(interval);
-				}
-			}, 30000);
+		// Check if user has admin role
+		try {
+			console.log('Fetching user roles...');
+			const response = await fetch('/api/user/roles');
+			console.log('Roles response status:', response.status);
+			if (response.ok) {
+				const rolesData = await response.json();
+				console.log('Roles data:', rolesData);
+				isAdmin = rolesData.is_admin || false;
+				console.log('isAdmin set to:', isAdmin);
+			} else {
+				const errorText = await response.text();
+				console.error('Failed to fetch roles:', response.status, errorText);
+			}
+		} catch (err) {
+			console.error('Error checking admin status:', err);
 		}
-		loading = false;
 	});
 
 	async function handleLogout() {
 		try {
-			await fetch('/api/auth/logout', { method: 'POST' });
-			await goto('/');
+			await signOut();
+			goto('/');
 		} catch (err) {
 			console.error('Error logging out:', err);
 		}
 	}
 
-	function getInitials(name: string): string {
+	function getInitials(name: string | null | undefined): string {
+		if (!name) return '?';
 		return name
 			.split(' ')
 			.map((n) => n[0])
 			.join('')
 			.toUpperCase();
 	}
+
+	function getUserName(): string {
+		return data.user?.user_metadata?.full_name ||
+		       data.user?.user_metadata?.name ||
+		       data.user?.email?.split('@')[0] ||
+		       'User';
+	}
+
+	function getProvider(): string {
+		return data.user?.app_metadata?.provider || 'email';
+	}
 </script>
 
-{#if loading}
-	<div class="min-h-screen bg-gray-50 flex items-center justify-center">
-		<div class="text-gray-600">Loading...</div>
-	</div>
-{:else if user}
+{#if data.user}
 	<div class="min-h-screen bg-gray-50 flex">
 		<!-- Sidebar -->
 		<div class="w-64 bg-white border-r border-gray-200">
@@ -178,13 +155,12 @@
 
 					<div class="flex items-center gap-3 pl-6 border-l border-gray-200 relative">
 						<div class="text-right">
-							<p class="text-sm font-medium text-gray-900">{user.name}</p>
-							<p class="text-xs text-gray-600">{user.provider}</p>
+							<p class="text-sm font-medium text-gray-900">{getUserName()}</p>
 						</div>
 						<div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold">
-							{getInitials(user.name)}
+							{getInitials(getUserName())}
 						</div>
-						<button type="button" on:click={() => { showDropdown = !showDropdown }} aria-label="User menu" class="text-gray-600 hover:text-gray-900">
+						<button type="button" onclick={() => { showDropdown = !showDropdown }} aria-label="User menu" class="text-gray-600 hover:text-gray-900">
 							<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
 								<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
 							</svg>
@@ -204,7 +180,7 @@
 									</a>
 								{/if}
 								<button
-									on:click={handleLogout}
+									onclick={handleLogout}
 									class="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 flex items-center gap-2 rounded-lg"
 								>
 									<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

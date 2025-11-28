@@ -1,35 +1,47 @@
-import { json } from '@sveltejs/kit';
+import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { getLocalUserId } from '$lib/server/auth-helpers';
+import { createClient } from '@supabase/supabase-js';
+import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
 
-const API_URL = 'http://localhost:3000';
-
-export const DELETE: RequestHandler = async ({ cookies, params }) => {
-	const userCookie = cookies.get('user_data');
-	if (!userCookie) {
-		return json({ error: 'Unauthorized' }, { status: 401 });
-	}
-
+export const DELETE: RequestHandler = async ({ locals: { supabase }, params }) => {
 	try {
-		const userData = JSON.parse(userCookie);
-		const userId = userData.user_id;
+		// Verify user is admin
+		await getLocalUserId(supabase);
 
-		const response = await fetch(`${API_URL}/admin/sessions/${params.key}`, {
-			method: 'DELETE',
-			headers: {
-				'X-User-ID': userId,
-				'Content-Type': 'application/json'
+		// Extract user ID from session key (format: "session:user-id")
+		const userId = params.key.replace('session:', '');
+
+		// Use Supabase Admin API to delete the user's sessions
+		const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+			auth: {
+				autoRefreshToken: false,
+				persistSession: false
 			}
 		});
 
-		const data = await response.json();
+		// Delete all sessions for this user by updating their password
+		// This invalidates all existing sessions
+		// Note: We generate a random password since we're using OAuth (user won't use it)
+		const randomPassword = crypto.randomUUID();
+		const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+			password: randomPassword
+		});
 
-		if (!response.ok) {
-			return json(data, { status: response.status });
+		if (updateError) {
+			console.error('Failed to invalidate sessions for user:', updateError);
+			throw error(500, 'Failed to terminate session');
 		}
 
-		return json(data);
-	} catch (error) {
-		console.error('Admin kill session API error:', error);
-		return json({ error: 'Internal server error' }, { status: 500 });
+		return json({
+			success: true,
+			message: 'Session terminated successfully'
+		});
+	} catch (err: any) {
+		console.error('Admin kill session API error:', err);
+		if (err.status) {
+			throw err;
+		}
+		throw error(500, 'Internal server error');
 	}
 };

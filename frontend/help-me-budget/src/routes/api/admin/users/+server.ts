@@ -1,26 +1,21 @@
-import { json } from '@sveltejs/kit';
+import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { getLocalUserId } from '$lib/server/auth-helpers';
 
 const API_URL = 'http://localhost:3000';
 
-export const GET: RequestHandler = async ({ cookies, url }) => {
-	const userCookie = cookies.get('user_data');
-	if (!userCookie) {
-		return json({ error: 'Unauthorized' }, { status: 401 });
-	}
-
+export const GET: RequestHandler = async ({ locals: { supabase }, url }) => {
 	try {
-		const userData = JSON.parse(userCookie);
-		const userId = userData.user_id;
+		const localUserId = await getLocalUserId(supabase);
 
-		// Forward request to Go API with user ID header
+		// Forward request to Go API with local user ID header
 		const limit = url.searchParams.get('limit') || '50';
 		const offset = url.searchParams.get('offset') || '0';
 
-		const response = await fetch(`${API_URL}/admin/users?limit=${limit}&offset=${offset}`, {
+		const response = await globalThis.fetch(`${API_URL}/admin/users?limit=${limit}&offset=${offset}`, {
 			method: 'GET',
 			headers: {
-				'X-User-ID': userId,
+				'X-User-ID': localUserId,
 				'Content-Type': 'application/json'
 			}
 		});
@@ -32,8 +27,11 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
 		}
 
 		return json(data);
-	} catch (error) {
-		console.error('Admin users API error:', error);
-		return json({ error: 'Internal server error' }, { status: 500 });
+	} catch (err: any) {
+		console.error('Admin users API error:', err);
+		if (err.status) {
+			throw err;
+		}
+		throw error(500, 'Internal server error');
 	}
 };

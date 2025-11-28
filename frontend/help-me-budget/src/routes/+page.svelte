@@ -1,45 +1,12 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 
-	let user: { email: string; name: string; provider: string } | null = null;
-	let error: string | null = null;
-	let isLoading = false;
-	let loadingProvider: string | null = null;
-
-	onMount(async () => {
-		// Check if user is already logged in
-		try {
-			const response = await fetch('/api/auth/me');
-			if (response.ok) {
-				const data = await response.json();
-				user = data.user;
-				// Redirect to dashboard if authenticated
-				if (user) {
-					goto('/dashboard');
-				}
-			}
-		} catch (err) {
-			console.error('Error checking auth status:', err);
-		}
-	});
-
-	function handleLogin(provider: string) {
-		// Set loading state
-		isLoading = true;
-		loadingProvider = provider;
-		// Navigate to the SvelteKit login endpoint which will redirect to the OAuth provider
-		window.location.href = `/api/auth/login/${provider}`;
+	function handleGetStarted() {
+		goto('/auth?mode=signup');
 	}
 
-	async function handleLogout() {
-		try {
-			await fetch('/api/auth/logout', { method: 'POST' });
-			user = null;
-			window.location.href = '/';
-		} catch (err) {
-			console.error('Error logging out:', err);
-		}
+	function handleLogin() {
+		goto('/auth?mode=login');
 	}
 </script>
 
@@ -95,107 +62,75 @@
 		</div>
 	</div>
 
-	<!-- Right Side - Login Form -->
+	<!-- Right Side - Marketing Content -->
 	<div class="w-full lg:w-1/2 flex items-center justify-center p-6">
 		<div class="w-full max-w-md">
-			<!-- Login View -->
-				<div>
-					<h1 class="text-4xl font-bold text-gray-900 mb-2">Sign up for an account</h1>
-					<p class="text-gray-600 mb-8">Send, spend and save smarter</p>
-
-					{#if error}
-						<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-4 rounded-xl mb-6 text-sm">
-							{error}
-						</div>
-					{/if}
-
-					<div class="space-y-3 mb-6">
-						<button
-							on:click={() => handleLogin('google')}
-							disabled={isLoading}
-							class="w-full bg-white border-2 border-gray-300 hover:border-gray-400 disabled:opacity-70 disabled:cursor-not-allowed text-gray-800 font-semibold py-3 px-4 rounded-xl transition duration-200 flex items-center justify-center gap-3"
-						>
-							{#if loadingProvider === 'google' && isLoading}
-								<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-									<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-									<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-								</svg>
-							{:else}
-								<svg class="w-5 h-5" viewBox="0 0 24 24">
-									<circle cx="12" cy="12" r="10" fill="#4285F4"/>
-									<text x="12" y="15" text-anchor="middle" fill="white" font-size="10" font-weight="bold">G</text>
-								</svg>
-							{/if}
-							<span>{isLoading && loadingProvider === 'google' ? 'Signing up...' : 'Sign Up with Google'}</span>
-						</button>
-
-						<button
-							on:click={() => handleLogin('facebook')}
-							disabled={isLoading}
-							class="w-full bg-white border-2 border-gray-300 hover:border-gray-400 disabled:opacity-70 disabled:cursor-not-allowed text-gray-800 font-semibold py-3 px-4 rounded-xl transition duration-200 flex items-center justify-center gap-3"
-						>
-							{#if loadingProvider === 'facebook' && isLoading}
-								<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-									<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-									<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-								</svg>
-							{:else}
-								<svg class="w-5 h-5" viewBox="0 0 24 24">
-									<rect x="2" y="2" width="20" height="20" fill="#1877F2" rx="3"/>
-									<text x="12" y="15" text-anchor="middle" fill="white" font-size="10" font-weight="bold">f</text>
-								</svg>
-							{/if}
-							<span>{isLoading && loadingProvider === 'facebook' ? 'Signing up...' : 'Sign Up with Facebook'}</span>
-						</button>
-					</div>
-
-					<div class="relative mb-6">
-						<div class="absolute inset-0 flex items-center">
-							<div class="w-full border-t border-gray-300"></div>
-						</div>
-						<div class="relative flex justify-center text-sm">
-							<span class="px-2 bg-white text-gray-600">Or with email</span>
-						</div>
-					</div>
-
-					<div class="space-y-3 mb-6">
-						<input
-							type="text"
-							placeholder="First name"
-							class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-blue-600 focus:outline-none transition"
-						/>
-						<input
-							type="text"
-							placeholder="Last name"
-							class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-blue-600 focus:outline-none transition"
-						/>
-						<input
-							type="email"
-							placeholder="Email"
-							class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-blue-600 focus:outline-none transition"
-						/>
-						<input
-							type="password"
-							placeholder="Password"
-							class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-blue-600 focus:outline-none transition"
-						/>
-					</div>
-
-					<button
-						class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition duration-200 mb-4"
-					>
-						Sign Up
-					</button>
-
-					<p class="text-center text-gray-600 text-sm">
-						Already have an account? <span class="text-blue-600 font-semibold hover:cursor-pointer">Sign In</span>
-					</p>
-
-					<p class="text-center text-gray-500 text-xs mt-6">
-						By creating an account, you agreeing to our <span class="text-gray-700 font-semibold">Privacy Policy</span> and
-						<span class="text-gray-700 font-semibold">Terms and Conditions</span>
-					</p>
+			<div class="flex items-center gap-2 mb-8 lg:hidden">
+				<div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+					<span class="text-white font-bold text-lg">💰</span>
 				</div>
+				<span class="text-2xl font-bold text-gray-900">Help Me Budget</span>
+			</div>
+
+			<h1 class="text-4xl font-bold text-gray-900 mb-2">Take control of your finances</h1>
+			<p class="text-gray-600 mb-8 text-lg">Track spending, set goals, and budget smarter with our simple, powerful tools.</p>
+
+			<div class="space-y-4 mb-8">
+				<div class="flex items-start gap-3">
+					<div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+						<svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+						</svg>
+					</div>
+					<div>
+						<h3 class="font-semibold text-gray-900">Track every transaction</h3>
+						<p class="text-gray-600 text-sm">Automatically categorize and monitor all your spending in one place.</p>
+					</div>
+				</div>
+
+				<div class="flex items-start gap-3">
+					<div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+						<svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+						</svg>
+					</div>
+					<div>
+						<h3 class="font-semibold text-gray-900">Set realistic goals</h3>
+						<p class="text-gray-600 text-sm">Create budgets that work for you and watch your progress in real-time.</p>
+					</div>
+				</div>
+
+				<div class="flex items-start gap-3">
+					<div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+						<svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+						</svg>
+					</div>
+					<div>
+						<h3 class="font-semibold text-gray-900">Save for what matters</h3>
+						<p class="text-gray-600 text-sm">Plan for the future with smart savings strategies and insights.</p>
+					</div>
+				</div>
+			</div>
+
+			<button
+				onclick={handleGetStarted}
+				class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition duration-200 mb-4"
+			>
+				Get Started Free
+			</button>
+
+			<p class="text-center text-gray-600 text-sm">
+				Already have an account?
+				<button onclick={handleLogin} class="text-blue-600 font-semibold hover:underline">
+					Sign In
+				</button>
+			</p>
+
+			<p class="text-center text-gray-500 text-xs mt-6">
+				By creating an account, you agree to our <span class="text-gray-700 font-semibold">Privacy Policy</span> and
+				<span class="text-gray-700 font-semibold">Terms and Conditions</span>
+			</p>
 		</div>
 	</div>
 </div>

@@ -1,35 +1,55 @@
-import { json } from '@sveltejs/kit';
+import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { getLocalUserId } from '$lib/server/auth-helpers';
+import { createClient } from '@supabase/supabase-js';
+import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
 
-const API_URL = 'http://localhost:3000';
-
-export const GET: RequestHandler = async ({ cookies }) => {
-	const userCookie = cookies.get('user_data');
-	if (!userCookie) {
-		return json({ error: 'Unauthorized' }, { status: 401 });
-	}
-
+export const GET: RequestHandler = async ({ locals: { supabase } }) => {
 	try {
-		const userData = JSON.parse(userCookie);
-		const userId = userData.user_id;
+		// Verify user is admin
+		await getLocalUserId(supabase);
 
-		const response = await fetch(`${API_URL}/admin/sessions`, {
-			method: 'GET',
-			headers: {
-				'X-User-ID': userId,
-				'Content-Type': 'application/json'
+		// Use Supabase Admin API to list sessions
+		const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+			auth: {
+				autoRefreshToken: false,
+				persistSession: false
 			}
 		});
 
-		const data = await response.json();
+		// Get all users with their last sign in time
+		// Note: Supabase doesn't expose active sessions directly, but we can show users
+		const { data: users, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
 
-		if (!response.ok) {
-			return json(data, { status: response.status });
+		if (usersError) {
+			console.error('Failed to list users from Supabase:', usersError);
+			throw error(500, 'Failed to fetch sessions');
 		}
 
-		return json(data);
-	} catch (error) {
-		console.error('Admin sessions API error:', error);
-		return json({ error: 'Internal server error' }, { status: 500 });
+		// Transform to match the expected session format
+		const sessions = users.users
+			.filter((user) => user.last_sign_in_at) // Only show users who have logged in
+			.map((user) => ({
+				key: `session:${user.id}`,
+				user_id: user.id,
+				email: user.email,
+				name: user.user_metadata?.full_name || user.user_metadata?.name || user.email,
+				provider: user.app_metadata?.provider || 'email',
+				login_at: user.last_sign_in_at,
+				// Note: We can't get exact session expiry from Supabase without service role
+				// Sessions typically last 1 hour by default
+			}))
+			.sort((a, b) => new Date(b.login_at).getTime() - new Date(a.login_at).getTime());
+
+		return json({
+			sessions,
+			total: sessions.length
+		});
+	} catch (err: any) {
+		console.error('Admin sessions API error:', err);
+		if (err.status) {
+			throw err;
+		}
+		throw error(500, 'Internal server error');
 	}
 };

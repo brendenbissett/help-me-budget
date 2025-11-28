@@ -1,22 +1,17 @@
-import { json } from '@sveltejs/kit';
+import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { getLocalUserId } from '$lib/server/auth-helpers';
 
 const API_URL = 'http://localhost:3000';
 
-export const POST: RequestHandler = async ({ cookies, params }) => {
-	const userCookie = cookies.get('user_data');
-	if (!userCookie) {
-		return json({ error: 'Unauthorized' }, { status: 401 });
-	}
-
+export const POST: RequestHandler = async ({ locals: { supabase }, params }) => {
 	try {
-		const userData = JSON.parse(userCookie);
-		const userId = userData.user_id;
+		const localUserId = await getLocalUserId(supabase);
 
-		const response = await fetch(`${API_URL}/admin/users/${params.id}/reactivate`, {
+		const response = await globalThis.fetch(`${API_URL}/admin/users/${params.id}/reactivate`, {
 			method: 'POST',
 			headers: {
-				'X-User-ID': userId,
+				'X-User-ID': localUserId,
 				'Content-Type': 'application/json'
 			}
 		});
@@ -28,8 +23,11 @@ export const POST: RequestHandler = async ({ cookies, params }) => {
 		}
 
 		return json(data);
-	} catch (error) {
-		console.error('Admin reactivate user API error:', error);
-		return json({ error: 'Internal server error' }, { status: 500 });
+	} catch (err: any) {
+		console.error('Admin reactivate user API error:', err);
+		if (err.status) {
+			throw err;
+		}
+		throw error(500, 'Internal server error');
 	}
 };
