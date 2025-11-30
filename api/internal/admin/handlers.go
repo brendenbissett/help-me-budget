@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"log"
 	"strconv"
 
 	"github.com/brendenbissett/help-me-budget/api/internal/auth"
@@ -8,6 +9,14 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 )
+
+// stringPtr is a helper function to convert string to *string
+func stringPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
 
 // GetUsers returns a paginated list of all users
 func GetUsers(c *fiber.Ctx) error {
@@ -169,6 +178,7 @@ func GetAuditLogsHandler(c *fiber.Ctx) error {
 
 	logs, err := auth.GetAuditLogs(c.Context(), limit, offset)
 	if err != nil {
+		log.Printf("Error fetching audit logs: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch audit logs",
 		})
@@ -252,8 +262,8 @@ func KillSession(c *fiber.Ctx) error {
 		Details: map[string]interface{}{
 			"session_key": sessionKey,
 		},
-		IPAddress: c.IP(),
-		UserAgent: c.Get("User-Agent"),
+		IPAddress: stringPtr(c.IP()),
+		UserAgent: stringPtr(c.Get("User-Agent")),
 	})
 
 	return c.JSON(fiber.Map{
@@ -309,8 +319,8 @@ func GrantRoleHandler(c *fiber.Ctx) error {
 		Details: map[string]interface{}{
 			"role_name": body.RoleName,
 		},
-		IPAddress: c.IP(),
-		UserAgent: c.Get("User-Agent"),
+		IPAddress: stringPtr(c.IP()),
+		UserAgent: stringPtr(c.Get("User-Agent")),
 	})
 
 	return c.JSON(fiber.Map{
@@ -366,8 +376,8 @@ func RevokeRoleHandler(c *fiber.Ctx) error {
 		Details: map[string]interface{}{
 			"role_name": body.RoleName,
 		},
-		IPAddress: c.IP(),
-		UserAgent: c.Get("User-Agent"),
+		IPAddress: stringPtr(c.IP()),
+		UserAgent: stringPtr(c.Get("User-Agent")),
 	})
 
 	return c.JSON(fiber.Map{

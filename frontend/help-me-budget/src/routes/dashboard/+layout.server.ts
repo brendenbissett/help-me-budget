@@ -1,7 +1,7 @@
 import { redirect } from '@sveltejs/kit';
-import type { PageServerLoad } from './$types';
+import type { LayoutServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals: { supabase } }) => {
+export const load: LayoutServerLoad = async ({ locals: { supabase } }) => {
 	// Use getUser() to verify authentication
 	const {
 		data: { user }

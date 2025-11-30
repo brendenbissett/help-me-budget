@@ -35,8 +35,8 @@ type AuditLog struct {
 	ResourceType string
 	ResourceID   *uuid.UUID
 	Details      map[string]interface{}
-	IPAddress    string
-	UserAgent    string
+	IPAddress    *string
+	UserAgent    *string
 	CreatedAt    time.Time
 }
 
@@ -142,7 +142,8 @@ func CreateAuditLog(ctx context.Context, log *AuditLog) error {
 // GetAuditLogs retrieves audit logs with pagination
 func GetAuditLogs(ctx context.Context, limit, offset int) ([]AuditLog, error) {
 	rows, err := database.DB.Query(ctx, `
-		SELECT id, actor_id, action, resource_type, resource_id, details, ip_address, user_agent, created_at
+		SELECT id, actor_id, action, resource_type, resource_id, details,
+		       CAST(ip_address AS TEXT) as ip_address, user_agent, created_at
 		FROM auth.audit_logs
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
