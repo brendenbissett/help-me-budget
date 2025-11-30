@@ -67,4 +67,11 @@ func SetupBudgetRoutes(app *fiber.App) {
 
 	// Budget entry matching rules (nested under budgets)
 	budgets.Post("/:id/entries/:entryId/matching-rules", UpdateBudgetEntryMatchingRulesHandler) // Update matching rules for budget entry
+
+	// Reports and analytics routes
+	reports := app.Group("/api/reports")
+	reports.Get("/spending-trends", GetSpendingTrendsHandler)           // Get spending trends by category over time (supports ?start_date=&end_date=)
+	reports.Get("/budget-variance", GetBudgetVarianceHandler)           // Get budget vs actual comparison (supports ?month=YYYY-MM)
+	reports.Get("/cash-flow-projection", GetCashFlowProjectionHandler) // Get projected cash flow (supports ?days=90&starting_balance=1000)
+	reports.Get("/top-expenses", GetTopExpensesHandler)                 // Get top spending categories (supports ?start_date=&end_date=&limit=10)
 }
