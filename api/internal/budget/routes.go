@@ -57,4 +57,14 @@ func SetupBudgetRoutes(app *fiber.App) {
 	dashboard.Get("/summary", GetDashboardSummaryHandler)                // Get comprehensive dashboard overview
 	dashboard.Get("/recent-activity", GetRecentActivityHandler)          // Get recent transactions (supports ?limit=20)
 	dashboard.Get("/spending-by-category", GetSpendingByCategoryHandler) // Get spending breakdown (supports ?start_date=&end_date=)
+
+	// Matching/automation routes
+	matching := app.Group("/api/matching")
+	matching.Get("/suggestions/:id", GetSuggestedMatchesHandler)           // Get match suggestions for a transaction
+	matching.Post("/auto-match/:id", AutoMatchTransactionHandler)          // Auto-match a single transaction
+	matching.Post("/bulk-auto-match", BulkAutoMatchHandler)                // Auto-match all unmatched transactions
+	matching.Post("/teach/:id", TeachMatchHandler)                         // Link transaction + create matching rules
+
+	// Budget entry matching rules (nested under budgets)
+	budgets.Post("/:id/entries/:entryId/matching-rules", UpdateBudgetEntryMatchingRulesHandler) // Update matching rules for budget entry
 }
