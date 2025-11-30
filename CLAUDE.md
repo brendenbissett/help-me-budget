@@ -54,12 +54,18 @@ The project is in early development with Supabase authentication and database pe
 
 ### `/frontend` - Frontend (SvelteKit)
 - **`src/lib/server/api-client.ts`**: Authenticated fetch helpers
+  - `checkApiHealth()` - Checks if Go API server is available (3-second timeout)
   - `authenticatedFetch()` - Wrapper that automatically includes API key header
   - `authenticatedFetchWithUser()` - Includes both API key and user ID headers
   - Centralizes API URL configuration
 - **`src/lib/server/auth-helpers.ts`**: Authentication helper functions
   - `getLocalUserId()` - Bridges Supabase auth with local PostgreSQL user ID
   - Syncs Supabase users to local database on first access
+- **`src/hooks.server.ts`**: Server-side request hooks
+  - Checks API health on first request and logs availability status
+  - Logs helpful error message if API server is not running
+  - Initializes Supabase client for each request
+  - Handles Paraglide i18n middleware
 - **`src/routes/+page.svelte`**: Main landing page
   - Supabase authentication UI components
   - Shows authenticated user info when logged in

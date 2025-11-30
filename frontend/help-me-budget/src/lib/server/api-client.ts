@@ -3,6 +3,23 @@ import { API_SECRET_KEY } from '$env/static/private';
 export const API_URL = 'http://localhost:3000';
 
 /**
+ * Check if the API server is available
+ *
+ * @returns Promise<boolean> - True if API is available, false otherwise
+ */
+export async function checkApiHealth(): Promise<boolean> {
+	try {
+		const response = await globalThis.fetch(`${API_URL}/`, {
+			method: 'GET',
+			signal: AbortSignal.timeout(3000) // 3 second timeout
+		});
+		return response.ok;
+	} catch (error) {
+		return false;
+	}
+}
+
+/**
  * Authenticated fetch wrapper that automatically includes API key
  *
  * @param endpoint - API endpoint path (e.g., '/auth/sync')
