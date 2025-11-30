@@ -203,10 +203,17 @@
 	<div
 		class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
 		onclick={closeModals}
+		onkeydown={(e) => e.key === 'Escape' && closeModals()}
+		role="button"
+		tabindex="0"
 	>
 		<div
 			class="bg-white rounded-2xl p-8 max-w-md w-full"
 			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+			role="dialog"
+			aria-label="Create account modal"
+			tabindex="-1"
 		>
 			<h2 class="text-2xl font-bold text-gray-900 mb-6">Add New Account</h2>
 
@@ -300,10 +307,17 @@
 	<div
 		class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
 		onclick={closeModals}
+		onkeydown={(e) => e.key === 'Escape' && closeModals()}
+		role="button"
+		tabindex="0"
 	>
 		<div
 			class="bg-white rounded-2xl p-8 max-w-md w-full"
 			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+			role="dialog"
+			aria-label="Edit account modal"
+			tabindex="-1"
 		>
 			<h2 class="text-2xl font-bold text-gray-900 mb-6">Edit Account</h2>
 
@@ -402,10 +416,17 @@
 	<div
 		class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
 		onclick={closeModals}
+		onkeydown={(e) => e.key === 'Escape' && closeModals()}
+		role="button"
+		tabindex="0"
 	>
 		<div
 			class="bg-white rounded-2xl p-8 max-w-md w-full"
 			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+			role="dialog"
+			aria-label="Delete account confirmation"
+			tabindex="-1"
 		>
 			<h2 class="text-2xl font-bold text-gray-900 mb-4">Delete Account?</h2>
 			<p class="text-gray-600 mb-6">

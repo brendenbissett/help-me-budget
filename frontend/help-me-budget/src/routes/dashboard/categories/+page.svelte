@@ -309,10 +309,17 @@
 	<div
 		class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
 		onclick={closeModals}
+		onkeydown={(e) => e.key === 'Escape' && closeModals()}
+		role="button"
+		tabindex="0"
 	>
 		<div
 			class="bg-white rounded-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto"
 			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+			role="dialog"
+			aria-label="Create category modal"
+			tabindex="-1"
 		>
 			<h2 class="text-2xl font-bold text-gray-900 mb-6">
 				Add {activeTab === 'income' ? 'Income' : 'Expense'} Category
@@ -337,7 +344,7 @@
 					</div>
 
 					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-2">Color</label>
+						<label for="color" class="block text-sm font-medium text-gray-700 mb-2">Color</label>
 						<div class="grid grid-cols-6 gap-2">
 							{#each colorOptions as color}
 								<label class="cursor-pointer">
@@ -396,10 +403,17 @@
 	<div
 		class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
 		onclick={closeModals}
+		onkeydown={(e) => e.key === 'Escape' && closeModals()}
+		role="button"
+		tabindex="0"
 	>
 		<div
 			class="bg-white rounded-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto"
 			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+			role="dialog"
+			aria-label="Edit category modal"
+			tabindex="-1"
 		>
 			<h2 class="text-2xl font-bold text-gray-900 mb-6">Edit Category</h2>
 
@@ -423,7 +437,7 @@
 					</div>
 
 					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-2">Color</label>
+						<label for="color" class="block text-sm font-medium text-gray-700 mb-2">Color</label>
 						<div class="grid grid-cols-6 gap-2">
 							{#each colorOptions as color}
 								<label class="cursor-pointer">
@@ -483,10 +497,17 @@
 	<div
 		class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
 		onclick={closeModals}
+		onkeydown={(e) => e.key === 'Escape' && closeModals()}
+		role="button"
+		tabindex="0"
 	>
 		<div
 			class="bg-white rounded-2xl p-8 max-w-md w-full"
 			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+			role="dialog"
+			aria-label="Delete category confirmation"
+			tabindex="-1"
 		>
 			<h2 class="text-2xl font-bold text-gray-900 mb-4">Delete Category?</h2>
 			<p class="text-gray-600 mb-6">

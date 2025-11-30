@@ -195,7 +195,7 @@
 						</a>
 					</div>
 
-					{#if summary.recent_transactions.length === 0}
+					{#if !summary.recent_transactions || summary.recent_transactions.length === 0}
 						<div class="text-center py-8 text-gray-500">
 							<p class="mb-2">No transactions yet</p>
 							<a href="/dashboard/transactions" class="text-blue-600 hover:text-blue-700 text-sm">
@@ -237,7 +237,7 @@
 				</div>
 
 				<!-- Spending by Category -->
-				{#if summary.spending_by_category.length > 0}
+				{#if summary.spending_by_category && summary.spending_by_category.length > 0}
 					<div class="bg-white rounded-2xl p-6 border-2 border-gray-100">
 						<h3 class="text-lg font-bold text-gray-900 mb-4">Spending by Category</h3>
 						<div class="space-y-3">
@@ -288,7 +288,7 @@
 				</div>
 
 				<!-- Upcoming Bills -->
-				{#if summary.upcoming_bills.length > 0}
+				{#if summary.upcoming_bills && summary.upcoming_bills.length > 0}
 					<div class="bg-white rounded-2xl p-6 border-2 border-gray-100">
 						<h3 class="text-lg font-bold text-gray-900 mb-4">Upcoming Bills</h3>
 						<div class="space-y-3">

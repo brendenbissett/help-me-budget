@@ -116,6 +116,10 @@
 						<div
 							class="bg-white rounded-2xl p-6 border-2 border-blue-200 hover:border-blue-400 transition cursor-pointer group"
 							onclick={() => viewBudget(budget.id)}
+							onkeydown={(e) => e.key === 'Enter' && viewBudget(budget.id)}
+							role="button"
+							tabindex="0"
+							aria-label={`View budget ${budget.name}`}
 						>
 							<!-- Header -->
 							<div class="flex justify-between items-start mb-4">
@@ -198,6 +202,10 @@
 						<div
 							class="bg-white rounded-2xl p-6 border-2 border-gray-200 opacity-60 hover:opacity-100 transition cursor-pointer group"
 							onclick={() => viewBudget(budget.id)}
+							onkeydown={(e) => e.key === 'Enter' && viewBudget(budget.id)}
+							role="button"
+							tabindex="0"
+							aria-label={`View archived budget ${budget.name}`}
 						>
 							<!-- Header -->
 							<div class="flex justify-between items-start mb-4">
@@ -268,9 +276,10 @@
 		<div
 			class="bg-white rounded-2xl p-8 max-w-md w-full"
 			onclick={(e) => e.stopPropagation()}
-			onkeydown={(e) => e.key === 'Escape' && closeModals()}
+			onkeydown={(e) => e.stopPropagation()}
 			role="dialog"
 			aria-modal="true"
+			aria-label="Create budget modal"
 			tabindex="-1"
 		>
 			<h2 class="text-2xl font-bold text-gray-900 mb-6">Create New Budget</h2>
@@ -337,9 +346,10 @@
 		<div
 			class="bg-white rounded-2xl p-8 max-w-md w-full"
 			onclick={(e) => e.stopPropagation()}
-			onkeydown={(e) => e.key === 'Escape' && closeModals()}
+			onkeydown={(e) => e.stopPropagation()}
 			role="dialog"
 			aria-modal="true"
+			aria-label="Edit budget modal"
 			tabindex="-1"
 		>
 			<h2 class="text-2xl font-bold text-gray-900 mb-6">Edit Budget</h2>
@@ -421,9 +431,10 @@
 		<div
 			class="bg-white rounded-2xl p-8 max-w-md w-full"
 			onclick={(e) => e.stopPropagation()}
-			onkeydown={(e) => e.key === 'Escape' && closeModals()}
+			onkeydown={(e) => e.stopPropagation()}
 			role="dialog"
 			aria-modal="true"
+			aria-label="Delete budget confirmation"
 			tabindex="-1"
 		>
 			<h2 class="text-2xl font-bold text-gray-900 mb-4">Delete Budget?</h2>

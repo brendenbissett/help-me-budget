@@ -29,14 +29,20 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 		const trendsStartDate = sixMonthsAgo.toISOString().split('T')[0];
 
-		// Fetch all reports data in parallel
+		// Fetch all reports data in parallel with error handling for each
 		const [spendingTrends, budgetVariance, cashFlowProjection, topExpenses, accounts] =
-			await Promise.all([
+			await Promise.allSettled([
 				getSpendingTrends(userId, trendsStartDate, endOfMonth),
 				getBudgetVariance(userId, month || currentMonth),
 				getCashFlowProjection(userId, days, 0), // Starting balance of 0
 				getTopExpenses(userId, startOfMonth, endOfMonth, 10),
 				getAccounts(userId)
+			]).then((results) => [
+				results[0].status === 'fulfilled' ? results[0].value : [],
+				results[1].status === 'fulfilled' ? results[1].value : [],
+				results[2].status === 'fulfilled' ? results[2].value : [],
+				results[3].status === 'fulfilled' ? results[3].value : [],
+				results[4].status === 'fulfilled' ? results[4].value : []
 			]);
 
 		// Calculate total balance from accounts for cash flow projection starting point

@@ -347,12 +347,14 @@
 	<div
 		class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
 		onclick={closeModals}
+		onkeydown={(e) => e.key === 'Escape' && closeModals()}
 		role="button"
 		tabindex="0"
 	>
 		<div
 			class="bg-white rounded-2xl p-6 max-w-lg w-full"
 			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
 			role="dialog"
 			tabindex="-1"
 		>
@@ -497,12 +499,14 @@
 	<div
 		class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
 		onclick={closeModals}
+		onkeydown={(e) => e.key === 'Escape' && closeModals()}
 		role="button"
 		tabindex="0"
 	>
 		<div
 			class="bg-white rounded-2xl p-6 max-w-lg w-full"
 			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
 			role="dialog"
 			tabindex="-1"
 		>
@@ -651,12 +655,14 @@
 	<div
 		class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
 		onclick={closeModals}
+		onkeydown={(e) => e.key === 'Escape' && closeModals()}
 		role="button"
 		tabindex="0"
 	>
 		<div
 			class="bg-white rounded-2xl p-6 max-w-md w-full"
 			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
 			role="dialog"
 			tabindex="-1"
 		>

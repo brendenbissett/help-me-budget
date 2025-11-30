@@ -63,8 +63,14 @@ export async function getSpendingTrends(
 	});
 
 	if (!response.ok) {
-		const error = await response.json();
-		throw new Error(error.error || 'Failed to get spending trends');
+		let errorMessage = 'Failed to get spending trends';
+		try {
+			const error = await response.json();
+			errorMessage = error.error || errorMessage;
+		} catch {
+			// Response wasn't JSON, use default message
+		}
+		throw new Error(errorMessage);
 	}
 
 	return response.json();
@@ -90,8 +96,14 @@ export async function getBudgetVariance(
 	});
 
 	if (!response.ok) {
-		const error = await response.json();
-		throw new Error(error.error || 'Failed to get budget variance');
+		let errorMessage = 'Failed to get budget variance';
+		try {
+			const error = await response.json();
+			errorMessage = error.error || errorMessage;
+		} catch {
+			// Response wasn't JSON, use default message
+		}
+		throw new Error(errorMessage);
 	}
 
 	return response.json();
@@ -119,8 +131,14 @@ export async function getCashFlowProjection(
 	});
 
 	if (!response.ok) {
-		const error = await response.json();
-		throw new Error(error.error || 'Failed to get cash flow projection');
+		let errorMessage = 'Failed to get cash flow projection';
+		try {
+			const error = await response.json();
+			errorMessage = error.error || errorMessage;
+		} catch {
+			// Response wasn't JSON, use default message
+		}
+		throw new Error(errorMessage);
 	}
 
 	return response.json();
@@ -151,8 +169,14 @@ export async function getTopExpenses(
 	});
 
 	if (!response.ok) {
-		const error = await response.json();
-		throw new Error(error.error || 'Failed to get top expenses');
+		let errorMessage = 'Failed to get top expenses';
+		try {
+			const error = await response.json();
+			errorMessage = error.error || errorMessage;
+		} catch {
+			// Response wasn't JSON, use default message
+		}
+		throw new Error(errorMessage);
 	}
 
 	return response.json();
