@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { signOut } from '$lib/supabase.client';
-	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import DashboardSidebar from '$lib/components/DashboardSidebar.svelte';
 
@@ -23,8 +22,8 @@
 
 	async function handleLogout() {
 		try {
+			// signOut() will handle redirect and cache invalidation
 			await signOut();
-			goto('/');
 		} catch (err) {
 			console.error('Error logging out:', err);
 		}

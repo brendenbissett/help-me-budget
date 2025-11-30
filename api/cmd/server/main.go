@@ -7,6 +7,7 @@ import (
 
 	"github.com/brendenbissett/help-me-budget/api/internal/admin"
 	"github.com/brendenbissett/help-me-budget/api/internal/auth"
+	"github.com/brendenbissett/help-me-budget/api/internal/budget"
 	"github.com/brendenbissett/help-me-budget/api/internal/database"
 	"github.com/brendenbissett/help-me-budget/api/internal/middleware"
 	"github.com/gofiber/fiber/v2"
@@ -74,6 +75,9 @@ func main() {
 
 	// Setup admin routes
 	admin.SetupAdminRoutes(app)
+
+	// Setup budget routes (accounts, categories, budgets, transactions)
+	budget.SetupBudgetRoutes(app)
 
 	log.Fatal(app.Listen(":3000"))
 }

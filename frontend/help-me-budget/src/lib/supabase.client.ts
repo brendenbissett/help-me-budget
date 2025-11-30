@@ -87,6 +87,7 @@ export const signInWithMagicLink = async (email: string) => {
 
 /**
  * Helper function to sign out
+ * Clears all authentication and invalidates cached data
  */
 export const signOut = async () => {
 	const supabase = createSupabaseBrowserClient();
@@ -94,6 +95,12 @@ export const signOut = async () => {
 
 	if (error) {
 		throw error;
+	}
+
+	// Clear any cached data by invalidating all routes
+	if (typeof window !== 'undefined') {
+		// Force a full page reload to clear all cached data
+		window.location.href = '/';
 	}
 };
 
