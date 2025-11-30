@@ -32,16 +32,11 @@ func main() {
 	}
 	defer database.Close()
 
-	// Initialize Redis connection
+	// Initialize Redis connection (used for caching and future admin dashboard metrics)
 	if err := database.InitRedis(); err != nil {
 		log.Fatal("Error initializing Redis:", err)
 	}
 	defer database.CloseRedis()
-
-	// Initialize OAuth providers
-	if err := auth.InitializeOAuthProviders(); err != nil {
-		log.Fatal("Error initializing OAuth providers:", err)
-	}
 
 	// Validate API secret key is set
 	apiSecret := os.Getenv("API_SECRET_KEY")
@@ -68,9 +63,6 @@ func main() {
 	// Add user context middleware (extracts user ID from X-User-ID header)
 	app.Use(admin.SetUserContext())
 
-	// Create session store
-	store := auth.NewSessionStore()
-
 	// Health check endpoint
 	app.Get("/", func(c *fiber.Ctx) error {
 		msg := fmt.Sprintf("Welcome to Help-Me-Budget API (V %s)", API_VERSION)
@@ -78,7 +70,7 @@ func main() {
 	})
 
 	// Setup authentication routes
-	auth.SetupAuthRoutes(app, store)
+	auth.SetupAuthRoutes(app)
 
 	// Setup admin routes
 	admin.SetupAdminRoutes(app)

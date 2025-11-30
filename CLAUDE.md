@@ -8,9 +8,10 @@ Help-Me-Budget is a budgeting application using a modern 3-tier architecture:
 - **Backend**: Go + Fiber web framework (RESTful API)
 - **Frontend**: SvelteKit
 - **Database**: PostgreSQL (separate schemas for auth and budget data)
-- **Session Store**: Redis
+- **Authentication**: Supabase (handles OAuth with Google & Facebook)
+- **Cache Store**: Redis (for future admin dashboard metrics and caching)
 
-The project is in early development with OAuth authentication (Google & Facebook) and database persistence implemented.
+The project is in early development with Supabase authentication and database persistence implemented.
 
 **Security**: The Go API uses shared secret authentication to ensure only the SvelteKit backend can make requests. All API calls require a valid `X-API-Key` header (except the health check endpoint).
 
@@ -21,18 +22,18 @@ The project is in early development with OAuth authentication (Google & Facebook
   - Fiber web server listening on port 3000
   - CORS middleware configured for localhost:5173
   - API key authentication middleware (validates X-API-Key header)
-  - Initializes database, Redis, and OAuth providers
-  - Sets up authentication routes
+  - Initializes database and Redis
+  - Sets up authentication and admin routes
 - **`internal/middleware/api_auth.go`**: API authentication middleware
   - `ValidateAPIKey()` - Ensures requests come from SvelteKit backend
   - Whitelists health check endpoint (GET /) for monitoring
   - Returns 401 Unauthorized for missing/invalid API keys
-- **`internal/auth/oauth.go`**: OAuth authentication module
-  - `InitializeOAuthProviders()` - Loads environment variables and configures Google/Facebook OAuth
-  - `SetupAuthRoutes()` - Registers OAuth flow routes
-  - `handleAuthStart()` - Initiates OAuth flow with state verification
-  - `handleAuthCallback()` - Completes OAuth flow, persists user to database, and returns user info
-  - `NewSessionStore()` - Creates Fiber session store with Redis backend
+- **`internal/auth/oauth.go`**: Authentication route setup
+  - `SetupAuthRoutes()` - Registers authentication routes
+  - Note: OAuth is handled by Supabase, not by this API
+- **`internal/auth/supabase_sync_handler.go`**: Supabase user sync
+  - `HandleSupabaseUserSync()` - Syncs Supabase authenticated users to local PostgreSQL
+  - Creates or updates user records with OAuth provider information
 - **`internal/auth/user_repository.go`**: User database operations
   - `UpsertUserWithOAuth()` - Creates or updates user and links OAuth provider
   - `GetUserByID()` - Retrieves user by ID
@@ -43,8 +44,13 @@ The project is in early development with OAuth authentication (Google & Facebook
 - **`internal/database/redis.go`**: Redis connection management
   - `InitRedis()` - Initializes Redis client
   - `CloseRedis()` - Closes Redis connection
+  - Note: Redis is used for caching and future admin dashboard metrics
+- **`internal/admin/handlers.go`**: Admin dashboard API endpoints
+  - User management and analytics
+  - System health monitoring
+  - Audit logs and security features
 - **`go.mod` / `go.sum`**: Go dependency management
-- **`.env`**: Environment variables (OAuth keys, database, and Redis configuration)
+- **`.env`**: Environment variables (Supabase keys, database, and Redis configuration)
 
 ### `/frontend` - Frontend (SvelteKit)
 - **`src/lib/server/api-client.ts`**: Authenticated fetch helpers
@@ -53,26 +59,12 @@ The project is in early development with OAuth authentication (Google & Facebook
   - Centralizes API URL configuration
 - **`src/lib/server/auth-helpers.ts`**: Authentication helper functions
   - `getLocalUserId()` - Bridges Supabase auth with local PostgreSQL user ID
-- **`src/routes/+page.svelte`**: Main landing page with OAuth login
-  - Displays login buttons for Google and Facebook
-  - Shows authenticated user info (email and provider) when logged in
+  - Syncs Supabase users to local database on first access
+- **`src/routes/+page.svelte`**: Main landing page
+  - Supabase authentication UI components
+  - Shows authenticated user info when logged in
   - Client-side state management with reactive variables
   - Tailwind CSS styling with responsive design
-- **`src/routes/api/auth/login/[provider]/+server.ts`**: Login initiation endpoint
-  - Proxies login requests to Go API at `http://localhost:3000`
-  - Handles session cookie management from OAuth provider
-  - Returns auth URL for frontend redirect
-- **`src/routes/api/auth/callback/[provider]/+server.ts`**: OAuth callback handler
-  - Receives callback from OAuth provider
-  - Communicates with Go API to complete auth flow
-  - Stores user data in secure HTTP-only cookie
-  - Redirects to home page on success
-- **`src/routes/api/auth/me/+server.ts`**: Current user endpoint
-  - Returns authenticated user info from stored cookie
-  - Returns 401 if not authenticated
-- **`src/routes/api/auth/logout/+server.ts`**: Logout endpoint
-  - Clears user data and session cookies
-  - Returns success response
 - **`package.json`**: Node.js dependencies
 - **`tsconfig.json`**: TypeScript configuration
 - **`svelte.config.js`**: SvelteKit configuration with Tailwind CSS
@@ -115,23 +107,20 @@ The project is in early development with OAuth authentication (Google & Facebook
 ## Development Environment Setup
 
 ### Required Environment Variables
-Set these in `api/.env` (see `api/.env.example` for template):
+Set these in `api/.env` and `frontend/help-me-budget/.env` (see example files for templates):
 
-**OAuth Configuration:**
-- `GOOGLE_KEY` - OAuth application ID from Google Console
-- `GOOGLE_SECRET` - OAuth application secret from Google Console
-- `GOOGLE_CALLBACK_URL` - OAuth callback URL (default: `http://localhost:5173/api/auth/callback/google`)
-- `FACEBOOK_KEY` - OAuth application ID from Facebook Developers
-- `FACEBOOK_SECRET` - OAuth application secret from Facebook Developers
-- `FACEBOOK_CALLBACK_URL` - OAuth callback URL (default: `http://localhost:5173/api/auth/callback/facebook`)
+**Supabase Configuration (Frontend):**
+- `PUBLIC_SUPABASE_URL` - Your Supabase project URL
+- `PUBLIC_SUPABASE_ANON_KEY` - Your Supabase anonymous/public API key
 
 **Database Configuration (choose one):**
 - `DATABASE_URL` - Full PostgreSQL connection string
   - OR individual variables: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_SSLMODE`
 
-**Redis Configuration (choose one):**
+**Redis Configuration (Backend - choose one):**
 - `REDIS_URL` - Full Redis connection string
   - OR individual variables: `REDIS_ADDR`, `REDIS_PASSWORD`
+- Note: Redis is used for caching and admin dashboard metrics, not authentication
 
 **Application:**
 - `APP_ENV` - Environment (development/production)
@@ -241,87 +230,83 @@ cd frontend/help-me-budget && npm run test:unit
 cd frontend/help-me-budget && npm run test:e2e
 ```
 
-## OAuth Flow Overview
+## Authentication Flow Overview
 
-The OAuth authentication uses a 3-layer architecture for security:
+The application uses Supabase for authentication with local PostgreSQL user sync:
 
-**Frontend → SvelteKit Backend → Go API → OAuth Provider**
+**Frontend (Supabase Client) ↔ Supabase Auth ↔ SvelteKit Backend ↔ Go API ↔ PostgreSQL**
 
 ### Flow Steps
 
-1. **Frontend Login Initiation**:
-   - User clicks "Login with Google/Facebook" button on landing page (`src/routes/+page.svelte`)
-   - Frontend calls `/api/auth/login/{provider}` on SvelteKit backend
+1. **Frontend Authentication**:
+   - User authenticates via Supabase client (Google/Facebook OAuth)
+   - Supabase handles all OAuth flows and session management
+   - Frontend receives Supabase session with JWT token
 
-2. **SvelteKit Backend - Login Route** (`src/routes/api/auth/login/[provider]/+server.ts`):
-   - Proxies request to Go API (`http://localhost:3000/auth/:provider`)
-   - Captures session cookie from Go API response
-   - Returns OAuth provider's auth URL to frontend
+2. **User Sync to Local Database**:
+   - On first access, SvelteKit backend calls `getLocalUserId()` helper
+   - Helper extracts user info from Supabase session
+   - Calls Go API `/auth/sync` endpoint to sync user to local PostgreSQL
+   - Returns local user ID for subsequent API calls
 
-3. **Frontend Redirect**:
-   - Frontend redirects user to OAuth provider's consent screen
-
-4. **OAuth Provider Callback**:
-   - Provider redirects back to SvelteKit backend at `/api/auth/callback/{provider}`
-
-5. **SvelteKit Backend - Callback Route** (`src/routes/api/auth/callback/[provider]/+server.ts`):
-   - Forwards callback to Go API with query parameters and session cookie
-   - Go API completes OAuth exchange, persists user to PostgreSQL, and returns user data
-   - Stores user data in secure HTTP-only cookie
-   - Redirects user back to home page
-
-6. **Check Authentication**:
-   - Frontend calls `/api/auth/me` to check if user is logged in
-   - SvelteKit backend returns user data from cookie
-   - Frontend displays user email and provider
+3. **Authenticated API Requests**:
+   - SvelteKit backend makes API calls to Go backend
+   - Includes `X-API-Key` (shared secret) and `X-User-ID` (local user ID) headers
+   - Go API validates requests and performs operations
 
 ### Security Features
 
+- **Supabase Authentication**: Industry-standard OAuth implementation with session management
 - **API Key Authentication**: Shared secret (`X-API-Key` header) ensures only SvelteKit backend can access Go API
   - All endpoints require valid API key (except GET / health check)
   - Returns 401 Unauthorized for missing/invalid keys
   - Prevents direct API access from unauthorized clients
+- **User Context Middleware**: Extracts user ID from headers for authorization
 - Frontend never communicates directly with Go API (proxied through SvelteKit)
-- User data stored in secure HTTP-only cookies (cannot be accessed by JavaScript)
-- Session data stored in Redis (not in-memory)
-- OAuth sessions managed in Redis with 24-hour expiration
 - User records persisted to PostgreSQL with OAuth provider links
-- CSRF protection via state parameter verification
 - Supports multiple OAuth providers per user account
 
 ## Key Dependencies
 
 **Backend (Go)**:
 - `gofiber/fiber/v2` - Web framework with middleware support
-- `markbates/goth` - OAuth provider abstraction (Google, Facebook)
 - `jackc/pgx/v5` - PostgreSQL driver and connection pooling
-- `redis/go-redis/v9` - Redis client
-- `gofiber/storage/redis/v3` - Redis storage adapter for Fiber sessions
+- `redis/go-redis/v9` - Redis client for caching and metrics
+- `google/uuid` - UUID generation for unique identifiers
 - `joho/godotenv` - Environment variable loading
+
+**Frontend (SvelteKit)**:
+- `@supabase/supabase-js` - Supabase client for authentication
+- SvelteKit - Full-stack web framework
+- Tailwind CSS - Utility-first CSS framework
 
 **Database Tools**:
 - `golang-migrate` - Database migration management
 - PostgreSQL 16 - Database server
-- Redis 7 - Session and cache store
+- Redis 7 - Cache store for metrics and future features
 
 ## Important Notes for Future Development
 
+- **Authentication**: Supabase handles all OAuth flows. Local PostgreSQL syncs user records for relational data.
+- **Redis Usage**: Currently initialized but not heavily used. Reserved for:
+  - Admin dashboard metrics caching
+  - Performance optimization for frequently accessed data
+  - Future real-time features
 - **Transaction Matching**: The `matching_rules` JSONB field in `budget_entries` enables auto-matching of imported transactions to planned entries
 - **Budget Projections**: Use `budget_entries` with frequency rules to project future cash flow
-- **OAuth Tokens**: Access/refresh tokens are stored in `user_oauth_providers` but not currently used for API calls
 - **Error Handling**: Consider standardizing error responses to JSON format across all endpoints
 - **Production Deployment**:
-  - Change `secure: false` to `secure: true` in cookie settings (requires HTTPS)
-  - Set `sameSite: 'strict'` instead of `'lax'` for stricter CSRF protection
   - Update CORS origins to production domain
   - Use managed PostgreSQL and Redis services instead of Docker
   - Store sensitive data in secure secret management (AWS Secrets Manager, HashiCorp Vault, etc.)
   - Enable SSL for PostgreSQL connections
+  - Configure Supabase production environment
 - **Future Features**:
   - Bank account import/sync integration
   - Transaction matching algorithm implementation
   - Budget vs actual comparison dashboards
   - Recurring transaction automation
+  - Admin dashboard with user analytics and system health monitoring
 
 ## Git Workflow
 
